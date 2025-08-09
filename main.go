@@ -14,12 +14,23 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
+	envFile := ".env"
+	if os.Getenv("APP_ENV") == "test" {
+		envFile = ".env.test"
+	}
+
+	err := godotenv.Load(envFile)
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	database.InitDB()
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+
+	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	e := echo.New()
 
