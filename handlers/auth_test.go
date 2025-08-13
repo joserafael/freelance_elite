@@ -55,7 +55,6 @@ func (s *AuthTestSuite) SetupSuite() {
 
 func (s *AuthTestSuite) TearDownSuite() {
 	// Clean up test database after all tests are done
-	database.DB.Exec("DROP TABLE IF EXISTS users")
 	// Close the database connection
 	sqlDB, _ := database.DB.DB()
 	sqlDB.Close()
@@ -63,7 +62,7 @@ func (s *AuthTestSuite) TearDownSuite() {
 
 func (s *AuthTestSuite) SetupTest() {
 	// Clean the users table before each test
-	database.DB.Exec("DELETE FROM users")
+	database.DB.Exec("TRUNCATE TABLE users")
 }
 
 func (s *AuthTestSuite) TestRegisterSuccess() {
@@ -161,4 +160,3 @@ func (s *AuthTestSuite) TestLoginInvalidCredentials() {
 func TestAuthTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthTestSuite))
 }
-
