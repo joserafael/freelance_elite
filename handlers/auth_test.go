@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/crypto/bcrypt"
 
@@ -51,6 +52,12 @@ func (s *AuthTestSuite) SetupSuite() {
 	s.e = echo.New()
 	s.e.POST("/register", Register)
 	s.e.POST("/login", Login)
+	s.e.POST("/logout", Logout)
+
+	p := s.e.Group("/profile")
+	p.Use(echojwt.JWT([]byte(os.Getenv("JWT_SECRET"))))
+	p.Use(CheckBlacklist)
+	p.GET("", Profile)
 }
 
 func (s *AuthTestSuite) TearDownSuite() {
@@ -156,6 +163,57 @@ func (s *AuthTestSuite) TestLoginInvalidCredentials() {
 	assert.Equal(s.T(), http.StatusUnauthorized, rec.Code)
 	assert.Contains(s.T(), rec.Body.String(), "Invalid email or password")
 }
+
+func (s *AuthTestSuite) TestLogoutSuccess() {
+	// Register a user
+	user := models.User{
+		Username: "logoutuser",
+		Email:    "logout@example.com",
+		Password: "password123",
+	}
+	jsonUser, _ := json.Marshal(user)
+
+	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonUser))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	s.e.ServeHTTP(rec, req)
+	assert.Equal(s.T(), http.StatusCreated, rec.Code)
+
+	// Login the user to get a token
+	loginPayload := models.User{
+		Email:    "logout@example.com",
+		Password: "password123",
+	}
+	jsonLogin, _ := json.Marshal(loginPayload)
+
+	req = httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonLogin))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec = httptest.NewRecorder()
+	s.e.ServeHTTP(rec, req)
+	assert.Equal(s.T(), http.StatusOK, rec.Code)
+
+	var loginResponse map[string]string
+	json.Unmarshal(rec.Body.Bytes(), &loginResponse)
+	token := loginResponse["token"]
+	assert.NotEmpty(s.T(), token)
+
+	// Logout the user
+	req = httptest.NewRequest(http.MethodPost, "/logout", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec = httptest.NewRecorder()
+	s.e.ServeHTTP(rec, req)
+	assert.Equal(s.T(), http.StatusOK, rec.Code)
+	assert.Contains(s.T(), rec.Body.String(), "Logged out successfully")
+
+	// Try to access a protected route with the blacklisted token
+	req = httptest.NewRequest(http.MethodGet, "/profile", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec = httptest.NewRecorder()
+	s.e.ServeHTTP(rec, req)
+	assert.Equal(s.T(), http.StatusUnauthorized, rec.Code)
+	assert.Contains(s.T(), rec.Body.String(), "Token has been revoked")
+}
+
 
 func TestAuthTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthTestSuite))
