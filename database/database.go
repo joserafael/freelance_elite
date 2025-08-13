@@ -5,13 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/mysql"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	gormmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
-
-	"freelance_elite/models"
 )
 
 var DB *gorm.DB
@@ -50,13 +45,6 @@ func InitDB(dbUser, dbPassword, dbHost, dbPort, dbName string) {
 	if err != nil {
 		log.Fatalf("failed to connect to database '%s': %v", dbName, err)
 	}
-
-	// Get the underlying sql.DB for migrations
-	sqlDB, err := DB.DB()
-	if err != nil {
-		log.Fatalf("failed to get sql.DB from GORM: %v", err)
-	}
-	// Do NOT close sqlDB here; GORM manages its lifecycle. It will be closed when the application exits.
 
 	// Run migrations
 	// This section is removed to allow manual migration control
