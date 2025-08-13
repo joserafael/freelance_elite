@@ -71,3 +71,63 @@ func Login(c echo.Context) error {
 		"token": t,
 	})
 }
+
+func Logout(c echo.Context) error {
+	authHeader := c.Request().Header.Get("Authorization")
+	if authHeader == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Authorization header missing"})
+	}
+
+	tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
+
+	// Parse the token to get claims and expiration time
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid token claims"})
+	}
+
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Token expiration not found"})
+	}
+	expiresAt := time.Unix(int64(exp), 0)
+
+	blacklistedToken := models.BlacklistedToken{
+		Token:     tokenString,
+		ExpiresAt: expiresAt,
+	}
+
+	if err := database.DB.Create(&blacklistedToken).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to blacklist token"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "Logged out successfully"})
+}
+
+func CheckBlacklist(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		tokenString := c.Request().Header.Get("Authorization")
+		if tokenString == "" {
+			return next(c) // Let echojwt.JWT handle missing token
+		}
+
+		tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
+
+		var blacklistedToken models.BlacklistedToken
+		if err := database.DB.Where("token = ?", tokenString).First(&blacklistedToken).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return next(c) // Token not blacklisted, proceed
+			}
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to check blacklist"})
+		}
+
+		// Token found in blacklist
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Token has been revoked"})
+	}
+}
+

@@ -39,9 +39,11 @@ func main() {
 
 	e.POST("/register", handlers.Register)
 	e.POST("/login", handlers.Login)
+	e.POST("/logout", handlers.Logout)
 
 	p := e.Group("/profile")
 	p.Use(echojwt.JWT([]byte(os.Getenv("JWT_SECRET"))))
+	p.Use(handlers.CheckBlacklist)
 	p.GET("", handlers.Profile)
 
 	e.Logger.Fatal(e.Start(":1323"))
