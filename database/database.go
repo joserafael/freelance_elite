@@ -45,24 +45,4 @@ func InitDB(dbUser, dbPassword, dbHost, dbPort, dbName string) {
 	if err != nil {
 		log.Fatalf("failed to connect to database '%s': %v", dbName, err)
 	}
-
-	// Run migrations
-	// This section is removed to allow manual migration control
-	// driver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
-	// if err != nil {
-	// 	log.Fatalf("could not start sql migration: %v", err)
-	// }
-
-	// m, err := migrate.NewWithDatabaseInstance(
-	// 	migrationPath,
-	// 	dbName,
-	// 	driver,
-	// )
-	// if err != nil {
-	// 	log.Fatalf("migration failed: %v", err)
-	// }
-
-	// if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-	// 	log.Fatalf("An error occurred while syncing the database: %v", err)
-	// }
 }
