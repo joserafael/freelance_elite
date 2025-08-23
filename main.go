@@ -7,10 +7,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	echojwt "github.com/labstack/echo-jwt/v4"
 
-	"freelance_elite/database"
-	"freelance_elite/handlers"
+	"freelance_elite/config"
 )
 
 func main() {
@@ -24,27 +22,14 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	config.InitDB()
 
 	e := echo.New()
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.POST("/register", handlers.Register)
-	e.POST("/login", handlers.Login)
-	e.POST("/logout", handlers.Logout)
-
-	p := e.Group("/profile")
-	p.Use(echojwt.JWT([]byte(os.Getenv("JWT_SECRET"))))
-	p.Use(handlers.CheckBlacklist)
-	p.GET("", handlers.Profile)
+	config.SetupRoutes(e)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
