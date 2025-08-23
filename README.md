@@ -70,7 +70,8 @@ go test -v ./handlers
     {
       "username": "john_doe",
       "email": "john.doe@example.com",
-      "password": "securepassword123"
+      "password": "securepassword123",
+      "password_confirmation": "securepassword123"
     }
     ```
 - `POST /login`: Authenticate a user and receive a JWT.
