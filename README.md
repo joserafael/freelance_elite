@@ -24,25 +24,27 @@ This project is a basic authentication example built with Go, demonstrating user
 - MySQL database
 
 ### Environment Variables
-Create a `.env` file in the project root with the following content (for development):
+Create a `.env` file in the project root with the following content:
 ```
-DB_USER=your_mysql_user
-DB_PASSWORD=your_mysql_password
-DB_NAME=freelance_elite_dev
+# Common
 DB_HOST=localhost
 DB_PORT=3306
 JWT_SECRET=your_jwt_secret_key
-```
-Create a `.env.test` file in the project root with the following content (for testing):
-```
+
+# Development
+APP_ENV=development
 DB_USER=your_mysql_user
 DB_PASSWORD=your_mysql_password
-DB_NAME=freelance_elite_test
-DB_HOST=localhost
-DB_PORT=3306
-JWT_SECRET=your_test_jwt_secret_key
+DB_NAME=freelance_elite_dev
+
+# Test
+TEST_DB_USER=your_mysql_user
+TEST_DB_PASSWORD=your_mysql_password
+TEST_DB_NAME=freelance_elite_test
+TEST_JWT_SECRET=your_test_jwt_secret_key
 ```
 *Remember to replace placeholder values with your actual database credentials and strong secret keys.*
+*Set `APP_ENV=test` when running tests to use the test database configuration.*
 
 ### Database Setup
 1. Ensure your MySQL server is running.
