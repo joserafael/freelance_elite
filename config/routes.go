@@ -2,9 +2,9 @@ package config
 
 import (
 	"os"
-	"freelance_elite/handlers"
 	"github.com/labstack/echo/v4"
 	echojwt "github.com/labstack/echo-jwt/v4"
+	"freelance_elite/handlers"
 )
 
 func SetupRoutes(e *echo.Echo) {

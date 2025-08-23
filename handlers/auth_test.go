@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"log"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -26,29 +25,21 @@ type AuthTestSuite struct {
 }
 
 func (s *AuthTestSuite) SetupSuite() {
-	// Load test environment variables
 	os.Setenv("APP_ENV", "test")
-	envMap, err := godotenv.Read("../.env.test")
-	if err != nil {
-		s.Fail("Error reading .env.test file", err)
+	var loadErr error
+	loadErr = godotenv.Load("../.env")
+	if loadErr != nil {
+		s.T().Fatal("Error loading .env file", loadErr)
 	}
 
-	dbUser := envMap["DB_USER"]
-	dbPassword := envMap["DB_PASSWORD"]
-	dbHost := envMap["DB_HOST"]
-	dbPort := envMap["DB_PORT"]
-	dbName := envMap["DB_NAME"]
-
-	log.Printf("Test DB_USER: %s", dbUser)
-	log.Printf("Test DB_PASSWORD: %s", dbPassword)
-	log.Printf("Test DB_HOST: %s", dbHost)
-	log.Printf("Test DB_PORT: %s", dbPort)
-	log.Printf("Test DB_NAME: %s", dbName)
-
-	// Initialize the test database
+	var dbUser, dbPassword, dbHost, dbPort, dbName string
+	dbUser = os.Getenv("TEST_DB_USER")
+	dbPassword = os.Getenv("TEST_DB_PASSWORD")
+	dbHost = os.Getenv("DB_HOST")
+	dbPort = os.Getenv("DB_PORT")
+	dbName = os.Getenv("TEST_DB_NAME")
 	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
-	// Create a new Echo instance for testing
 	s.e = echo.New()
 	s.e.POST("/register", Register)
 	s.e.POST("/login", Login)
