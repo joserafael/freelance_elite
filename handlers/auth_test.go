@@ -74,9 +74,10 @@ func (s *AuthTestSuite) SetupTest() {
 
 func (s *AuthTestSuite) TestRegisterSuccess() {
 	user := models.User{
-		Username: "testuser",
-		Email:    "test@example.com",
-		Password: "password123",
+		Username:             "testuser",
+		Email:                "test@example.com",
+		Password:             "password123",
+		PasswordConfirmation: "password123",
 	}
 	jsonUser, _ := json.Marshal(user)
 
@@ -98,9 +99,10 @@ func (s *AuthTestSuite) TestRegisterSuccess() {
 func (s *AuthTestSuite) TestRegisterDuplicateEmail() {
 	// Register once
 	user := models.User{
-		Username: "testuser",
-		Email:    "test@example.com",
-		Password: "password123",
+		Username:             "testuser",
+		Email:                "test@example.com",
+		Password:             "password123",
+		PasswordConfirmation: "password123",
 	}
 	jsonUser, _ := json.Marshal(user)
 
@@ -167,9 +169,10 @@ func (s *AuthTestSuite) TestLoginInvalidCredentials() {
 func (s *AuthTestSuite) TestLogoutSuccess() {
 	// Register a user
 	user := models.User{
-		Username: "logoutuser",
-		Email:    "logout@example.com",
-		Password: "password123",
+		Username:             "logoutuser",
+		Email:                "logout@example.com",
+		Password:             "password123",
+		PasswordConfirmation: "password123",
 	}
 	jsonUser, _ := json.Marshal(user)
 
