@@ -8,7 +8,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -17,6 +16,7 @@ import (
 
 	"freelance_elite/database"
 	"freelance_elite/models"
+	"freelance_elite/testutil"
 )
 
 type AuthTestSuite struct {
@@ -25,20 +25,8 @@ type AuthTestSuite struct {
 }
 
 func (s *AuthTestSuite) SetupSuite() {
-	os.Setenv("APP_ENV", "test")
-	var loadErr error
-	loadErr = godotenv.Load("../.env")
-	if loadErr != nil {
-		s.T().Fatal("Error loading .env file", loadErr)
-	}
-
-	var dbUser, dbPassword, dbHost, dbPort, dbName string
-	dbUser = os.Getenv("TEST_DB_USER")
-	dbPassword = os.Getenv("TEST_DB_PASSWORD")
-	dbHost = os.Getenv("DB_HOST")
-	dbPort = os.Getenv("DB_PORT")
-	dbName = os.Getenv("TEST_DB_NAME")
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	// Setup test database configuration
+	testutil.SetupTestDB(s.T())
 
 	s.e = echo.New()
 	s.e.POST("/register", Register)
