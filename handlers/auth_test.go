@@ -13,10 +13,10 @@ import (
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/joho/godotenv"
 
 	"freelance_elite/database"
 	"freelance_elite/models"
-	"freelance_elite/testutil"
 )
 
 type AuthTestSuite struct {
@@ -26,7 +26,22 @@ type AuthTestSuite struct {
 
 func (s *AuthTestSuite) SetupSuite() {
 	// Setup test database configuration
-	testutil.SetupTestDB(s.T())
+	os.Setenv("APP_ENV", "test")
+	
+	// Load environment variables from .env file
+	loadErr := godotenv.Load("../.env")
+	if loadErr != nil {
+		s.T().Fatal("Error loading .env file", loadErr)
+	}
+	
+	// Initialize test database
+	dbUser := os.Getenv("TEST_DB_USER")
+	dbPassword := os.Getenv("TEST_DB_PASSWORD")
+	dbName := os.Getenv("TEST_DB_NAME")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	
+	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	s.e = echo.New()
 	s.e.POST("/register", Register)
