@@ -28,7 +28,7 @@ func main() {
 	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	// Auto-migrate the schema
-	err = database.DB.AutoMigrate(&models.User{}, &models.BlacklistedToken{}, &models.Gender{})
+	err = database.DB.AutoMigrate(&models.User{}, &models.BlacklistedToken{}, &models.Gender{}, &models.Country{})
 	if err != nil {
 		log.Fatalf("failed to auto-migrate database: %v", err)
 	}
