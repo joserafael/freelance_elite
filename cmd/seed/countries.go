@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 )
 
@@ -198,10 +198,10 @@ func seedCountries() {
 	// Insert countries, checking for duplicates
 	for _, country := range countries {
 		var existingCountry models.Country
-		result := database.DB.Where("code = ?", country.Code).First(&existingCountry)
+		result := db.DB.Where("code = ?", country.Code).First(&existingCountry)
 		if result.Error != nil {
 			// Country doesn't exist, create it
-			if err := database.DB.Create(&country).Error; err != nil {
+			if err := db.DB.Create(&country).Error; err != nil {
 				log.Printf("Failed to create country %s: %v", country.Name, err)
 			} else {
 				log.Printf("Created country: %s (%s)", country.Name, country.Code)

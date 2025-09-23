@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 )
 
@@ -39,10 +39,10 @@ func seedGenders() {
 	// Insert genders, checking for duplicates
 	for _, gender := range genders {
 		var existingGender models.Gender
-		result := database.DB.Where("name = ?", gender.Name).First(&existingGender)
+		result := db.DB.Where("name = ?", gender.Name).First(&existingGender)
 		if result.Error != nil {
 			// Gender doesn't exist, create it
-			if err := database.DB.Create(&gender).Error; err != nil {
+			if err := db.DB.Create(&gender).Error; err != nil {
 				log.Printf("Failed to create gender %s: %v", gender.Name, err)
 			} else {
 				log.Printf("Created gender: %s", gender.Name)

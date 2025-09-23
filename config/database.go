@@ -3,7 +3,8 @@ package config
 import (
 	"os"
 	"testing"
-	"freelance_elite/database"
+
+	"freelance_elite/db"
 	"github.com/joho/godotenv"
 )
 
@@ -28,7 +29,7 @@ func InitDB() {
 		dbName = os.Getenv("DB_NAME")
 	}
 
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 }
 
 // SetupTestDB initializes the test database connection

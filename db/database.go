@@ -1,4 +1,4 @@
-package database
+package db
 
 import (
 	"database/sql"
@@ -11,6 +11,7 @@ import (
 
 var DB *gorm.DB
 
+// InitDB handles the low-level database connection logic
 func InitDB(dbUser, dbPassword, dbHost, dbPort, dbName string) {
 	// Connect to MySQL server without specifying a database to create it if it doesn't exist
 	initialDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/?charset=utf8mb4&parseTime=True&loc=Local",

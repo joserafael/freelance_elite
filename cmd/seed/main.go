@@ -4,8 +4,7 @@ import (
 	"log"
 	"os"
 
-	"freelance_elite/database"
-
+	"freelance_elite/db"
 	"github.com/joho/godotenv"
 )
 
@@ -24,7 +23,7 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 
 	// Initialize database connection
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	// Seed gender data
 	seedGenders()

@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 )
 
@@ -31,7 +31,7 @@ func Register(c echo.Context) error {
 	}
 	user.Password = string(hashedPassword)
 
-	if err := database.DB.Create(&user).Error; err != nil {
+	if err := db.DB.Create(&user).Error; err != nil {
 		if strings.Contains(err.Error(), "Duplicate entry") {
 			return c.JSON(http.StatusConflict, map[string]string{"error": "Username or email already exists"})
 		}
@@ -48,7 +48,7 @@ func Login(c echo.Context) error {
 	}
 
 	var user models.User
-	if err := database.DB.Where("email = ?", payload.Email).First(&user).Error; err != nil {
+	if err := db.DB.Where("email = ?", payload.Email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
 		}
@@ -106,7 +106,7 @@ func Logout(c echo.Context) error {
 		ExpiresAt: expiresAt,
 	}
 
-	if err := database.DB.Create(&blacklistedToken).Error; err != nil {
+	if err := db.DB.Create(&blacklistedToken).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to blacklist token"})
 	}
 
@@ -123,7 +123,7 @@ func CheckBlacklist(next echo.HandlerFunc) echo.HandlerFunc {
 		tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 
 		var blacklistedToken models.BlacklistedToken
-		if err := database.DB.Where("token = ?", tokenString).First(&blacklistedToken).Error; err != nil {
+		if err := db.DB.Where("token = ?", tokenString).First(&blacklistedToken).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return next(c) // Token not blacklisted, proceed
 			}

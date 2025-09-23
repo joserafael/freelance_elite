@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/joho/godotenv"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 )
 
@@ -40,10 +40,10 @@ func (s *CountryTestSuite) SetupSuite() {
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 	
 	// Auto-migrate Country table for tests
-	database.DB.AutoMigrate(&models.Country{})
+	db.DB.AutoMigrate(&models.Country{})
 
 	s.e = echo.New()
 	s.e.GET("/countries", GetCountries)
@@ -56,13 +56,13 @@ func (s *CountryTestSuite) SetupSuite() {
 
 func (s *CountryTestSuite) TearDownSuite() {
 	// Clean up test database after all tests are done
-	sqlDB, _ := database.DB.DB()
+	sqlDB, _ := db.DB.DB()
 	sqlDB.Close()
 }
 
 func (s *CountryTestSuite) SetupTest() {
 	// Clean the countries table before each test
-	database.DB.Exec("DELETE FROM countries")
+	db.DB.Exec("DELETE FROM countries")
 }
 
 func (s *CountryTestSuite) TestGetCountriesEmpty() {
@@ -150,7 +150,7 @@ func (s *CountryTestSuite) TestCreateCountryDuplicateName() {
 		Code:     "CAN",
 		IsActive: true,
 	}
-	database.DB.Create(&country)
+	db.DB.Create(&country)
 
 	// Try to create second country with same name
 	countryData := map[string]interface{}{
@@ -176,7 +176,7 @@ func (s *CountryTestSuite) TestCreateCountryDuplicateCode() {
 		Code:     "MEX",
 		IsActive: true,
 	}
-	database.DB.Create(&country)
+	db.DB.Create(&country)
 
 	// Try to create second country with same code
 	countryData := map[string]interface{}{
@@ -204,7 +204,7 @@ func (s *CountryTestSuite) TestGetCountriesWithData() {
 	}
 
 	for _, country := range countries {
-		database.DB.Create(&country)
+		db.DB.Create(&country)
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/countries", nil)
@@ -233,7 +233,7 @@ func (s *CountryTestSuite) TestGetCountriesWithFilters() {
 	}
 
 	for _, country := range countries {
-		database.DB.Create(&country)
+		db.DB.Create(&country)
 	}
 
 	// Test region filter
@@ -288,7 +288,7 @@ func (s *CountryTestSuite) TestGetCountryByIdSuccess() {
 		Capital:  "Lima",
 		IsActive: true,
 	}
-	database.DB.Create(&country)
+	db.DB.Create(&country)
 
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/countries/%d", country.ID), nil)
 	rec := httptest.NewRecorder()
@@ -332,7 +332,7 @@ func (s *CountryTestSuite) TestUpdateCountrySuccess() {
 		Population: 50000000,
 		IsActive:   true,
 	}
-	database.DB.Create(&country)
+	db.DB.Create(&country)
 
 	// Update data
 	updateData := map[string]interface{}{
@@ -382,8 +382,8 @@ func (s *CountryTestSuite) TestUpdateCountryDuplicateName() {
 	// Create two countries
 	country1 := models.Country{Name: "Ecuador", Code: "ECU", IsActive: true}
 	country2 := models.Country{Name: "Venezuela", Code: "VEN", IsActive: true}
-	database.DB.Create(&country1)
-	database.DB.Create(&country2)
+	db.DB.Create(&country1)
+	db.DB.Create(&country2)
 
 	// Try to update country2 with country1's name
 	updateData := map[string]interface{}{
@@ -409,7 +409,7 @@ func (s *CountryTestSuite) TestDeleteCountrySuccess() {
 		Code:     "TBD",
 		IsActive: true,
 	}
-	database.DB.Create(&country)
+	db.DB.Create(&country)
 
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/countries/%d", country.ID), nil)
 	rec := httptest.NewRecorder()
@@ -420,7 +420,7 @@ func (s *CountryTestSuite) TestDeleteCountrySuccess() {
 
 	// Verify deletion
 	var deletedCountry models.Country
-	err := database.DB.First(&deletedCountry, country.ID).Error
+	err := db.DB.First(&deletedCountry, country.ID).Error
 	assert.Error(s.T(), err)
 }
 
@@ -452,7 +452,7 @@ func (s *CountryTestSuite) TestGetCountriesByRegionSuccess() {
 	}
 
 	for _, country := range countries {
-		database.DB.Create(&country)
+		db.DB.Create(&country)
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/countries/region/Americas", nil)

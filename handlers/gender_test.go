@@ -9,13 +9,12 @@ import (
 	"os"
 	"testing"
 
+	"freelance_elite/db"
+	"freelance_elite/models"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/joho/godotenv"
-
-	"freelance_elite/database"
-	"freelance_elite/models"
 )
 
 type GenderTestSuite struct {
@@ -40,10 +39,10 @@ func (s *GenderTestSuite) SetupSuite() {
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 	
 	// Auto-migrate Gender table for tests
-	database.DB.AutoMigrate(&models.Gender{})
+	db.DB.AutoMigrate(&models.Gender{})
 
 	s.e = echo.New()
 	s.e.GET("/genders", GetGenders)
@@ -55,13 +54,13 @@ func (s *GenderTestSuite) SetupSuite() {
 
 func (s *GenderTestSuite) TearDownSuite() {
 	// Clean up test database after all tests are done
-	sqlDB, _ := database.DB.DB()
+	sqlDB, _ := db.DB.DB()
 	sqlDB.Close()
 }
 
 func (s *GenderTestSuite) SetupTest() {
 	// Clean the genders table before each test
-	database.DB.Exec("DELETE FROM genders")
+	db.DB.Exec("DELETE FROM genders")
 }
 
 func (s *GenderTestSuite) TestGetGendersEmpty() {
@@ -96,7 +95,7 @@ func (s *GenderTestSuite) TestCreateGenderSuccess() {
 
 	// Verify gender is in the database
 	var createdGender models.Gender
-	err := database.DB.Where("name = ?", gender.Name).First(&createdGender).Error
+	err := db.DB.Where("name = ?", gender.Name).First(&createdGender).Error
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), gender.Name, createdGender.Name)
 	assert.Equal(s.T(), gender.Description, createdGender.Description)
@@ -161,7 +160,7 @@ func (s *GenderTestSuite) TestGetGendersWithData() {
 	}
 
 	for _, gender := range genders {
-		database.DB.Create(&gender)
+		db.DB.Create(&gender)
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/genders", nil)
@@ -183,7 +182,7 @@ func (s *GenderTestSuite) TestGetGenderByIdSuccess() {
 		Description: "Other gender",
 		IsActive:    true,
 	}
-	database.DB.Create(&gender)
+	db.DB.Create(&gender)
 
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/genders/%d", gender.ID), nil)
 	rec := httptest.NewRecorder()
@@ -224,7 +223,7 @@ func (s *GenderTestSuite) TestUpdateGenderSuccess() {
 		Description: "Original description",
 		IsActive:    true,
 	}
-	database.DB.Create(&gender)
+	db.DB.Create(&gender)
 
 	// Update the gender
 	updateData := models.Gender{
@@ -245,7 +244,7 @@ func (s *GenderTestSuite) TestUpdateGenderSuccess() {
 
 	// Verify the update in database
 	var updatedGender models.Gender
-	database.DB.First(&updatedGender, gender.ID)
+	db.DB.First(&updatedGender, gender.ID)
 	assert.Equal(s.T(), "Prefer not to disclose", updatedGender.Name)
 	assert.Equal(s.T(), "Updated description", updatedGender.Description)
 	assert.False(s.T(), updatedGender.IsActive)
@@ -272,8 +271,8 @@ func (s *GenderTestSuite) TestUpdateGenderDuplicateName() {
 	// Create two genders
 	gender1 := models.Gender{Name: "Male", Description: "Male gender", IsActive: true}
 	gender2 := models.Gender{Name: "Female", Description: "Female gender", IsActive: true}
-	database.DB.Create(&gender1)
-	database.DB.Create(&gender2)
+	db.DB.Create(&gender1)
+	db.DB.Create(&gender2)
 
 	// Try to update gender2 to have the same name as gender1
 	updateData := models.Gender{Name: "Male"}
@@ -295,7 +294,7 @@ func (s *GenderTestSuite) TestDeleteGenderSuccess() {
 		Description: "This gender will be deleted",
 		IsActive:    true,
 	}
-	database.DB.Create(&gender)
+	db.DB.Create(&gender)
 
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/genders/%d", gender.ID), nil)
 	rec := httptest.NewRecorder()
@@ -306,7 +305,7 @@ func (s *GenderTestSuite) TestDeleteGenderSuccess() {
 
 	// Verify deletion
 	var deletedGender models.Gender
-	err := database.DB.First(&deletedGender, gender.ID).Error
+	err := db.DB.First(&deletedGender, gender.ID).Error
 	assert.Error(s.T(), err)
 }
 

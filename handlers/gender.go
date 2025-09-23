@@ -7,14 +7,14 @@ import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 )
 
 // GetGenders retrieves all genders
 func GetGenders(c echo.Context) error {
 	var genders []models.Gender
-	if err := database.DB.Find(&genders).Error; err != nil {
+	if err := db.DB.Find(&genders).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to retrieve genders"})
 	}
 	return c.JSON(http.StatusOK, genders)
@@ -28,7 +28,7 @@ func GetGender(c echo.Context) error {
 	}
 
 	var gender models.Gender
-	if err := database.DB.First(&gender, id).Error; err != nil {
+	if err := db.DB.First(&gender, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "Gender not found"})
 		}
@@ -51,11 +51,11 @@ func CreateGender(c echo.Context) error {
 
 	// Check if gender with same name already exists
 	var existingGender models.Gender
-	if err := database.DB.Where("name = ?", gender.Name).First(&existingGender).Error; err == nil {
+	if err := db.DB.Where("name = ?", gender.Name).First(&existingGender).Error; err == nil {
 		return c.JSON(http.StatusConflict, map[string]string{"error": "Gender with this name already exists"})
 	}
 
-	if err := database.DB.Create(&gender).Error; err != nil {
+	if err := db.DB.Create(&gender).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create gender"})
 	}
 
@@ -73,7 +73,7 @@ func UpdateGender(c echo.Context) error {
 	}
 
 	var gender models.Gender
-	if err := database.DB.First(&gender, id).Error; err != nil {
+	if err := db.DB.First(&gender, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "Gender not found"})
 		}
@@ -88,7 +88,7 @@ func UpdateGender(c echo.Context) error {
 	// Check if another gender with the same name exists (excluding current gender)
 	if updateData.Name != "" && updateData.Name != gender.Name {
 		var existingGender models.Gender
-		if err := database.DB.Where("name = ? AND id != ?", updateData.Name, id).First(&existingGender).Error; err == nil {
+		if err := db.DB.Where("name = ? AND id != ?", updateData.Name, id).First(&existingGender).Error; err == nil {
 			return c.JSON(http.StatusConflict, map[string]string{"error": "Gender with this name already exists"})
 		}
 	}
@@ -103,7 +103,7 @@ func UpdateGender(c echo.Context) error {
 	// Update IsActive field (including false values)
 	gender.IsActive = updateData.IsActive
 
-	if err := database.DB.Save(&gender).Error; err != nil {
+	if err := db.DB.Save(&gender).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update gender"})
 	}
 
@@ -121,14 +121,14 @@ func DeleteGender(c echo.Context) error {
 	}
 
 	var gender models.Gender
-	if err := database.DB.First(&gender, id).Error; err != nil {
+	if err := db.DB.First(&gender, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "Gender not found"})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to retrieve gender"})
 	}
 
-	if err := database.DB.Delete(&gender).Error; err != nil {
+	if err := db.DB.Delete(&gender).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete gender"})
 	}
 

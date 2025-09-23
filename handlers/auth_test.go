@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"github.com/joho/godotenv"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 )
 
@@ -41,7 +41,7 @@ func (s *AuthTestSuite) SetupSuite() {
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	s.e = echo.New()
 	s.e.POST("/register", Register)
@@ -57,13 +57,13 @@ func (s *AuthTestSuite) SetupSuite() {
 func (s *AuthTestSuite) TearDownSuite() {
 	// Clean up test database after all tests are done
 	// Close the database connection
-	sqlDB, _ := database.DB.DB()
+	sqlDB, _ := db.DB.DB()
 	sqlDB.Close()
 }
 
 func (s *AuthTestSuite) SetupTest() {
 	// Clean the users table before each test
-	database.DB.Exec("TRUNCATE TABLE users")
+	db.DB.Exec("TRUNCATE TABLE users")
 }
 
 func (s *AuthTestSuite) TestRegisterSuccess() {
@@ -85,7 +85,7 @@ func (s *AuthTestSuite) TestRegisterSuccess() {
 
 	// Verify user is in the database
 	var registeredUser models.User
-	err := database.DB.Where("email = ?", user.Email).First(&registeredUser).Error
+	err := db.DB.Where("email = ?", user.Email).First(&registeredUser).Error
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), user.Email, registeredUser.Email)
 }
@@ -125,7 +125,7 @@ func (s *AuthTestSuite) TestLoginSuccess() {
 	}
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(hashedPassword)
-	database.DB.Create(&user)
+	db.DB.Create(&user)
 
 	// Attempt to login
 	loginPayload := models.User{

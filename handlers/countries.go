@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 )
 
@@ -23,7 +23,7 @@ func GetCountries(c echo.Context) error {
 	search := c.QueryParam("search")
 
 	// Build query
-	query := database.DB
+	query := db.DB
 
 	// Apply filters
 	if region != "" {
@@ -65,7 +65,7 @@ func GetCountry(c echo.Context) error {
 	}
 
 	var country models.Country
-	if err := database.DB.First(&country, countryID).Error; err != nil {
+	if err := db.DB.First(&country, countryID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.JSON(http.StatusNotFound, map[string]string{
 				"error": "Country not found",
@@ -107,7 +107,7 @@ func CreateCountry(c echo.Context) error {
 
 	// Check if country with same name or code already exists
 	var existingCountry models.Country
-	if err := database.DB.Where("name = ? OR code = ?", country.Name, country.Code).First(&existingCountry).Error; err == nil {
+	if err := db.DB.Where("name = ? OR code = ?", country.Name, country.Code).First(&existingCountry).Error; err == nil {
 		if existingCountry.Name == country.Name {
 			return c.JSON(http.StatusConflict, map[string]string{
 				"error": "Country with this name already exists",
@@ -121,7 +121,7 @@ func CreateCountry(c echo.Context) error {
 	}
 
 	// Create the country
-	if err := database.DB.Create(&country).Error; err != nil {
+	if err := db.DB.Create(&country).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to create country",
 		})
@@ -145,7 +145,7 @@ func UpdateCountry(c echo.Context) error {
 
 	// Check if country exists
 	var existingCountry models.Country
-	if err := database.DB.First(&existingCountry, countryID).Error; err != nil {
+	if err := db.DB.First(&existingCountry, countryID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.JSON(http.StatusNotFound, map[string]string{
 				"error": "Country not found",
@@ -185,7 +185,7 @@ func UpdateCountry(c echo.Context) error {
 	// Check for duplicates if name or code is being updated
 	if updateData.Name != "" && updateData.Name != existingCountry.Name {
 		var duplicateCountry models.Country
-		if err := database.DB.Where("name = ? AND id != ?", updateData.Name, countryID).First(&duplicateCountry).Error; err == nil {
+		if err := db.DB.Where("name = ? AND id != ?", updateData.Name, countryID).First(&duplicateCountry).Error; err == nil {
 			return c.JSON(http.StatusConflict, map[string]string{
 				"error": "Country with this name already exists",
 			})
@@ -193,7 +193,7 @@ func UpdateCountry(c echo.Context) error {
 	}
 	if updateData.Code != "" && updateData.Code != existingCountry.Code {
 		var duplicateCountry models.Country
-		if err := database.DB.Where("code = ? AND id != ?", updateData.Code, countryID).First(&duplicateCountry).Error; err == nil {
+		if err := db.DB.Where("code = ? AND id != ?", updateData.Code, countryID).First(&duplicateCountry).Error; err == nil {
 			return c.JSON(http.StatusConflict, map[string]string{
 				"error": "Country with this code already exists",
 			})
@@ -201,7 +201,7 @@ func UpdateCountry(c echo.Context) error {
 	}
 
 	// Update the country
-	if err := database.DB.Model(&existingCountry).Updates(updateData).Error; err != nil {
+	if err := db.DB.Model(&existingCountry).Updates(updateData).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to update country",
 		})
@@ -209,7 +209,7 @@ func UpdateCountry(c echo.Context) error {
 
 	// Fetch the updated country
 	var updatedCountry models.Country
-	database.DB.First(&updatedCountry, countryID)
+	db.DB.First(&updatedCountry, countryID)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"message": "Country updated successfully",
@@ -229,7 +229,7 @@ func DeleteCountry(c echo.Context) error {
 
 	// Check if country exists
 	var country models.Country
-	if err := database.DB.First(&country, countryID).Error; err != nil {
+	if err := db.DB.First(&country, countryID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.JSON(http.StatusNotFound, map[string]string{
 				"error": "Country not found",
@@ -241,7 +241,7 @@ func DeleteCountry(c echo.Context) error {
 	}
 
 	// Delete the country
-	if err := database.DB.Delete(&country).Error; err != nil {
+	if err := db.DB.Delete(&country).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to delete country",
 		})
@@ -262,7 +262,7 @@ func GetCountriesByRegion(c echo.Context) error {
 	}
 
 	var countries []models.Country
-	if err := database.DB.Where("region LIKE ?", "%"+region+"%").Order("name ASC").Find(&countries).Error; err != nil {
+	if err := db.DB.Where("region LIKE ?", "%"+region+"%").Order("name ASC").Find(&countries).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to retrieve countries",
 		})

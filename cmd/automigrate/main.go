@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 
 	"github.com/joho/godotenv"
@@ -25,10 +25,10 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 
 	// Initialize database connection
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	// Auto-migrate the schema
-	err = database.DB.AutoMigrate(&models.User{}, &models.BlacklistedToken{}, &models.Gender{}, &models.Country{}, &models.Profile{})
+	err = db.DB.AutoMigrate(&models.User{}, &models.BlacklistedToken{}, &models.Gender{}, &models.Country{}, &models.Profile{})
 	if err != nil {
 		log.Fatalf("failed to auto-migrate database: %v", err)
 	}
