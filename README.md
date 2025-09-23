@@ -90,8 +90,10 @@ go run cmd/automigrate/main.go
 
 #### Seed Initial Data
 ```bash
-go run cmd/seed/main.go
+go run cmd/seed/*.go
 ```
+
+> **Note**: Use `*.go` to compile all Go files in the seed directory, as the seed functions are distributed across multiple files (`main.go`, `gender.go`, `countries.go`).
 
 ### 4. Install Dependencies
 ```bash
@@ -349,7 +351,7 @@ freelance_elite/
 go run cmd/automigrate/main.go
 
 # Seed database
-go run cmd/seed/main.go
+go run cmd/seed/*.go
 ```
 
 ### Testing
