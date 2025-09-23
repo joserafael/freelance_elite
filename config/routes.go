@@ -29,6 +29,14 @@ func SetupRoutes(e *echo.Echo) {
 	countries.DELETE("/:id", handlers.DeleteCountry)
 	countries.GET("/region/:region", handlers.GetCountriesByRegion)
 
+	// Profiles routes (public access)
+	profiles := e.Group("/profiles")
+	profiles.GET("", handlers.GetProfiles)
+	profiles.GET("/:id", handlers.GetProfileByID)
+	profiles.POST("", handlers.CreateProfile)
+	profiles.PUT("/:id", handlers.UpdateProfile)
+	profiles.DELETE("/:id", handlers.DeleteProfile)
+
 	p := e.Group("/profile")
 	p.Use(echojwt.JWT([]byte(os.Getenv("JWT_SECRET"))))
 	p.Use(handlers.CheckBlacklist)
