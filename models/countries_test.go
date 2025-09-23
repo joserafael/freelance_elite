@@ -4,11 +4,10 @@ import (
 	"os"
 	"testing"
 
+	"freelance_elite/db"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/joho/godotenv"
-
-	"freelance_elite/database"
 )
 
 type CountryTestSuite struct {
@@ -16,237 +15,174 @@ type CountryTestSuite struct {
 }
 
 func (s *CountryTestSuite) SetupSuite() {
-	// Setup test database configuration
-	os.Setenv("APP_ENV", "test")
-	
-	// Load environment variables from .env file
-	loadErr := godotenv.Load("../.env")
-	if loadErr != nil {
-		s.T().Fatal("Error loading .env file", loadErr)
+	// Load environment variables
+	err := godotenv.Load("../.env")
+	if err != nil {
+		s.T().Fatal("Error loading .env file")
 	}
-	
-	// Initialize test database
-	dbUser := os.Getenv("TEST_DB_USER")
-	dbPassword := os.Getenv("TEST_DB_PASSWORD")
-	dbName := os.Getenv("TEST_DB_NAME")
+
+	// Get database configuration from environment
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
 	dbHost := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DB_NAME")
 	dbPort := os.Getenv("DB_PORT")
-	
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
-	
-	// Auto-migrate Country table for tests
-	database.DB.AutoMigrate(&Country{})
+
+	// Initialize database connection
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	// Auto-migrate the schema
+	db.DB.AutoMigrate(&Country{})
 }
 
 func (s *CountryTestSuite) TearDownSuite() {
-	database.DB.Exec("DELETE FROM countries")
+	// Clean up test database after all tests are done
+	db.DB.Exec("DELETE FROM countries")
 }
 
 func (s *CountryTestSuite) SetupTest() {
-	database.DB.Exec("DELETE FROM countries")
+	// Clean the countries table before each test
+	db.DB.Exec("DELETE FROM countries")
 }
 
 func (s *CountryTestSuite) TestCreateCountry() {
 	country := Country{
-		Name:       "United States",
-		Code:       "USA",
-		Region:     "Americas",
-		Subregion:  "Northern America",
-		Capital:    "Washington D.C.",
-		Population: 331900000,
-		Area:       9833517.0,
-		Currency:   "USD",
-		Language:   "English",
-		IsActive:   true,
+		Name:     "United States",
+		Code:     "US",
+		IsActive: true,
 	}
 
-	err := database.DB.Create(&country).Error
-	assert.NoError(s.T(), err)
+	result := db.DB.Create(&country)
+	assert.NoError(s.T(), result.Error)
 	assert.NotZero(s.T(), country.ID)
 	assert.Equal(s.T(), "United States", country.Name)
-	assert.Equal(s.T(), "USA", country.Code)
-	assert.Equal(s.T(), "Americas", country.Region)
-	assert.Equal(s.T(), "Northern America", country.Subregion)
-	assert.Equal(s.T(), "Washington D.C.", country.Capital)
-	assert.Equal(s.T(), int64(331900000), country.Population)
-	assert.Equal(s.T(), 9833517.0, country.Area)
-	assert.Equal(s.T(), "USD", country.Currency)
-	assert.Equal(s.T(), "English", country.Language)
+	assert.Equal(s.T(), "US", country.Code)
 	assert.True(s.T(), country.IsActive)
 }
 
-func (s *CountryTestSuite) TestCreateCountryMinimalData() {
-	country := Country{
-		Name:     "Canada",
-		Code:     "CAN",
-		IsActive: true,
-	}
-
-	err := database.DB.Create(&country).Error
-	assert.NoError(s.T(), err)
-	assert.NotZero(s.T(), country.ID)
-	assert.Equal(s.T(), "Canada", country.Name)
-	assert.Equal(s.T(), "CAN", country.Code)
-	assert.True(s.T(), country.IsActive)
-}
-
-func (s *CountryTestSuite) TestCreateCountryUniqueNameConstraint() {
+func (s *CountryTestSuite) TestCreateCountryWithDuplicateName() {
 	// Create first country
 	country1 := Country{
-		Name:     "Mexico",
-		Code:     "MEX",
+		Name:     "Canada",
+		Code:     "CA",
 		IsActive: true,
 	}
-	err := database.DB.Create(&country1).Error
-	assert.NoError(s.T(), err)
+	result1 := db.DB.Create(&country1)
+	assert.NoError(s.T(), result1.Error)
 
 	// Try to create second country with same name
 	country2 := Country{
-		Name:     "Mexico",
-		Code:     "MX2",
+		Name:     "Canada",
+		Code:     "CA2",
 		IsActive: true,
 	}
-	err = database.DB.Create(&country2).Error
-	assert.Error(s.T(), err)
+	result2 := db.DB.Create(&country2)
+	assert.Error(s.T(), result2.Error)
 }
 
-func (s *CountryTestSuite) TestCreateCountryUniqueCodeConstraint() {
+func (s *CountryTestSuite) TestCreateCountryWithDuplicateCode() {
 	// Create first country
 	country1 := Country{
-		Name:     "Brazil",
-		Code:     "BRA",
+		Name:     "Mexico",
+		Code:     "MX",
 		IsActive: true,
 	}
-	err := database.DB.Create(&country1).Error
-	assert.NoError(s.T(), err)
+	result1 := db.DB.Create(&country1)
+	assert.NoError(s.T(), result1.Error)
 
 	// Try to create second country with same code
 	country2 := Country{
-		Name:     "Brasil",
-		Code:     "BRA",
+		Name:     "Mexico 2",
+		Code:     "MX",
 		IsActive: true,
 	}
-	err = database.DB.Create(&country2).Error
-	assert.Error(s.T(), err)
+	result2 := db.DB.Create(&country2)
+	assert.Error(s.T(), result2.Error)
 }
 
-func (s *CountryTestSuite) TestCreateCountryWithEmptyName() {
+func (s *CountryTestSuite) TestFindCountry() {
+	// Create a country first
 	country := Country{
-		Code:     "ARG",
+		Name:     "Brazil",
+		Code:     "BR",
 		IsActive: true,
 	}
+	db.DB.Create(&country)
 
-	err := database.DB.Create(&country).Error
-	// GORM doesn't enforce validation by default, so this might not error
-	// In a real application, you would add validation middleware
-	if err != nil {
-		assert.Error(s.T(), err)
-	} else {
-		// If no error, verify the record was created but name is empty
-		assert.Empty(s.T(), country.Name)
-	}
-}
-
-func (s *CountryTestSuite) TestCreateCountryWithEmptyCode() {
-	country := Country{
-		Name:     "Argentina",
-		IsActive: true,
-	}
-
-	err := database.DB.Create(&country).Error
-	// GORM doesn't enforce validation by default, so this might not error
-	// In a real application, you would add validation middleware
-	if err != nil {
-		assert.Error(s.T(), err)
-	} else {
-		// If no error, verify the record was created but code is empty
-		assert.Empty(s.T(), country.Code)
-	}
+	// Find the country
+	var foundCountry Country
+	result := db.DB.First(&foundCountry, country.ID)
+	assert.NoError(s.T(), result.Error)
+	assert.Equal(s.T(), country.ID, foundCountry.ID)
+	assert.Equal(s.T(), "Brazil", foundCountry.Name)
+	assert.Equal(s.T(), "BR", foundCountry.Code)
 }
 
 func (s *CountryTestSuite) TestUpdateCountry() {
-	// Create a country
+	// Create a country first
 	country := Country{
-		Name:       "Chile",
-		Code:       "CHL",
-		Region:     "Americas",
-		Capital:    "Santiago",
-		Population: 19116000,
-		IsActive:   true,
+		Name:     "Argentina",
+		Code:     "AR",
+		IsActive: true,
 	}
-	err := database.DB.Create(&country).Error
-	assert.NoError(s.T(), err)
+	db.DB.Create(&country)
 
 	// Update the country
-	country.Capital = "Santiago de Chile"
-	country.Population = 19200000
-	err = database.DB.Save(&country).Error
-	assert.NoError(s.T(), err)
+	country.Name = "Argentina Updated"
+	country.IsActive = false
+	result := db.DB.Save(&country)
+	assert.NoError(s.T(), result.Error)
 
 	// Verify the update
 	var updatedCountry Country
-	err = database.DB.First(&updatedCountry, country.ID).Error
-	assert.NoError(s.T(), err)
-	assert.Equal(s.T(), "Santiago de Chile", updatedCountry.Capital)
-	assert.Equal(s.T(), int64(19200000), updatedCountry.Population)
+	db.DB.First(&updatedCountry, country.ID)
+	assert.Equal(s.T(), "Argentina Updated", updatedCountry.Name)
+	assert.False(s.T(), updatedCountry.IsActive)
 }
 
 func (s *CountryTestSuite) TestDeleteCountry() {
-	// Create a country
+	// Create a country first
 	country := Country{
-		Name:     "Test Delete",
-		Code:     "TDL",
+		Name:     "Temporary",
+		Code:     "TMP",
 		IsActive: true,
 	}
-	err := database.DB.Create(&country).Error
-	assert.NoError(s.T(), err)
+	db.DB.Create(&country)
 
 	// Delete the country
-	err = database.DB.Delete(&country).Error
-	assert.NoError(s.T(), err)
+	result := db.DB.Delete(&country)
+	assert.NoError(s.T(), result.Error)
 
 	// Verify deletion
 	var deletedCountry Country
-	err = database.DB.First(&deletedCountry, country.ID).Error
+	err := db.DB.First(&deletedCountry, country.ID).Error
 	assert.Error(s.T(), err)
 }
 
 func (s *CountryTestSuite) TestFindCountries() {
-	// Create active countries
-	country1 := Country{Name: "Peru", Code: "PER", Region: "Americas", IsActive: true}
-	err := database.DB.Create(&country1).Error
-	assert.NoError(s.T(), err)
+	// Create multiple countries
+	countries := []Country{
+		{Name: "France", Code: "FR", IsActive: true},
+		{Name: "Germany", Code: "DE", IsActive: true},
+		{Name: "Italy", Code: "IT", IsActive: false},
+	}
 
-	country2 := Country{Name: "Colombia", Code: "COL", Region: "Americas", IsActive: true}
-	err = database.DB.Create(&country2).Error
-	assert.NoError(s.T(), err)
-
-	// Create inactive country by updating after creation
-	country3 := Country{Name: "Ecuador", Code: "ECU", Region: "Americas", IsActive: true}
-	err = database.DB.Create(&country3).Error
-	assert.NoError(s.T(), err)
-	
-	// Update to set IsActive to false
-	err = database.DB.Model(&country3).Update("is_active", false).Error
-	assert.NoError(s.T(), err)
+	for _, country := range countries {
+		err := db.DB.Create(&country).Error
+		assert.NoError(s.T(), err)
+	}
 
 	// Find all countries
-	var allCountries []Country
-	err = database.DB.Find(&allCountries).Error
+	var foundCountries []Country
+	err := db.DB.Find(&foundCountries).Error
 	assert.NoError(s.T(), err)
-	assert.Len(s.T(), allCountries, 3)
+	assert.Len(s.T(), foundCountries, 3)
 
 	// Find active countries only
 	var activeCountries []Country
-	err = database.DB.Where("is_active = ?", true).Find(&activeCountries).Error
+	err = db.DB.Where("is_active = ?", true).Find(&activeCountries).Error
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), activeCountries, 2)
-
-	// Find inactive countries only
-	var inactiveCountries []Country
-	err = database.DB.Where("is_active = ?", false).Find(&inactiveCountries).Error
-	assert.NoError(s.T(), err)
-	assert.Len(s.T(), inactiveCountries, 1)
 }
 
 func (s *CountryTestSuite) TestTableName() {

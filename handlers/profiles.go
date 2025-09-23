@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"freelance_elite/database"
+	"freelance_elite/db"
 	"freelance_elite/models"
 
 	"github.com/labstack/echo/v4"
@@ -41,29 +41,29 @@ func CreateProfile(c echo.Context) error {
 
 	// Check if user exists
 	var user models.User
-	if err := database.DB.First(&user, profile.UserID).Error; err != nil {
+	if err := db.DB.First(&user, profile.UserID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "User not found"})
 	}
 
 	// Check if gender exists
 	var gender models.Gender
-	if err := database.DB.First(&gender, profile.GenderID).Error; err != nil {
+	if err := db.DB.First(&gender, profile.GenderID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Gender not found"})
 	}
 
 	// Check if country exists
 	var country models.Country
-	if err := database.DB.First(&country, profile.CountryID).Error; err != nil {
+	if err := db.DB.First(&country, profile.CountryID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Country not found"})
 	}
 
 	// Create the profile
-	if err := database.DB.Create(&profile).Error; err != nil {
+	if err := db.DB.Create(&profile).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create profile"})
 	}
 
 	// Load relationships
-	database.DB.Preload("User").Preload("Gender").Preload("Country").First(&profile, profile.ID)
+	db.DB.Preload("User").Preload("Gender").Preload("Country").First(&profile, profile.ID)
 
 	return c.JSON(http.StatusCreated, profile)
 }
@@ -71,7 +71,7 @@ func CreateProfile(c echo.Context) error {
 // GetProfiles retrieves all profiles with optional filters
 func GetProfiles(c echo.Context) error {
 	var profiles []models.Profile
-	query := database.DB.Preload("User").Preload("Gender").Preload("Country")
+	query := db.DB.Preload("User").Preload("Gender").Preload("Country")
 
 	// Filter by gender
 	if genderID := c.QueryParam("gender_id"); genderID != "" {
@@ -123,7 +123,7 @@ func GetProfileByID(c echo.Context) error {
 	}
 
 	var profile models.Profile
-	if err := database.DB.Preload("User").Preload("Gender").Preload("Country").First(&profile, id).Error; err != nil {
+	if err := db.DB.Preload("User").Preload("Gender").Preload("Country").First(&profile, id).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Profile not found"})
 	}
 
@@ -144,7 +144,7 @@ func UpdateProfile(c echo.Context) error {
 
 	// Check if profile exists
 	var existingProfile models.Profile
-	if err := database.DB.First(&existingProfile, id).Error; err != nil {
+	if err := db.DB.First(&existingProfile, id).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Profile not found"})
 	}
 
@@ -176,19 +176,19 @@ func UpdateProfile(c echo.Context) error {
 
 	// Check if user exists
 	var user models.User
-	if err := database.DB.First(&user, updatedProfile.UserID).Error; err != nil {
+	if err := db.DB.First(&user, updatedProfile.UserID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "User not found"})
 	}
 
 	// Check if gender exists
 	var gender models.Gender
-	if err := database.DB.First(&gender, updatedProfile.GenderID).Error; err != nil {
+	if err := db.DB.First(&gender, updatedProfile.GenderID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Gender not found"})
 	}
 
 	// Check if country exists
 	var country models.Country
-	if err := database.DB.First(&country, updatedProfile.CountryID).Error; err != nil {
+	if err := db.DB.First(&country, updatedProfile.CountryID).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Country not found"})
 	}
 
@@ -201,12 +201,12 @@ func UpdateProfile(c echo.Context) error {
 	existingProfile.GenderID = updatedProfile.GenderID
 	existingProfile.CountryID = updatedProfile.CountryID
 
-	if err := database.DB.Save(&existingProfile).Error; err != nil {
+	if err := db.DB.Save(&existingProfile).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update profile"})
 	}
 
 	// Load relationships
-	database.DB.Preload("User").Preload("Gender").Preload("Country").First(&existingProfile, existingProfile.ID)
+	db.DB.Preload("User").Preload("Gender").Preload("Country").First(&existingProfile, existingProfile.ID)
 
 	return c.JSON(http.StatusOK, existingProfile)
 }
@@ -225,12 +225,12 @@ func DeleteProfile(c echo.Context) error {
 
 	// Check if profile exists
 	var profile models.Profile
-	if err := database.DB.First(&profile, id).Error; err != nil {
+	if err := db.DB.First(&profile, id).Error; err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "Profile not found"})
 	}
 
 	// Delete the profile (soft delete)
-	if err := database.DB.Delete(&profile).Error; err != nil {
+	if err := db.DB.Delete(&profile).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete profile"})
 	}
 

@@ -4,11 +4,10 @@ import (
 	"os"
 	"testing"
 
+	"freelance_elite/db"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/joho/godotenv"
-
-	"freelance_elite/database"
 )
 
 type UserTestSuite struct {
@@ -32,15 +31,15 @@ func (s *UserTestSuite) SetupSuite() {
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 }
 
 func (s *UserTestSuite) TearDownSuite() {
-	database.DB.Exec("DELETE FROM users")
+	db.DB.Exec("DELETE FROM users")
 }
 
 func (s *UserTestSuite) SetupTest() {
-	database.DB.Exec("DELETE FROM users")
+	db.DB.Exec("DELETE FROM users")
 }
 
 func (s *UserTestSuite) TestCreateUser() {
@@ -50,7 +49,7 @@ func (s *UserTestSuite) TestCreateUser() {
 		Password: "hashedpassword",
 	}
 
-	result := database.DB.Create(&user)
+	result := db.DB.Create(&user)
 	assert.NoError(s.T(), result.Error)
 	assert.NotZero(s.T(), user.ID)
 }

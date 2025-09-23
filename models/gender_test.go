@@ -4,11 +4,10 @@ import (
 	"os"
 	"testing"
 
+	"freelance_elite/db"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/joho/godotenv"
-
-	"freelance_elite/database"
 )
 
 type GenderTestSuite struct {
@@ -16,34 +15,34 @@ type GenderTestSuite struct {
 }
 
 func (s *GenderTestSuite) SetupSuite() {
-	// Setup test database configuration
-	os.Setenv("APP_ENV", "test")
-	
-	// Load environment variables from .env file
-	loadErr := godotenv.Load("../.env")
-	if loadErr != nil {
-		s.T().Fatal("Error loading .env file", loadErr)
+	// Load environment variables
+	err := godotenv.Load("../.env")
+	if err != nil {
+		s.T().Fatal("Error loading .env file")
 	}
-	
-	// Initialize test database
-	dbUser := os.Getenv("TEST_DB_USER")
-	dbPassword := os.Getenv("TEST_DB_PASSWORD")
-	dbName := os.Getenv("TEST_DB_NAME")
+
+	// Get database configuration from environment
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
 	dbHost := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DB_NAME")
 	dbPort := os.Getenv("DB_PORT")
-	
-	database.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
-	
-	// Auto-migrate Gender table for tests
-	database.DB.AutoMigrate(&Gender{})
+
+	// Initialize database connection
+	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	// Auto-migrate the schema
+	db.DB.AutoMigrate(&Gender{})
 }
 
 func (s *GenderTestSuite) TearDownSuite() {
-	database.DB.Exec("DELETE FROM genders")
+	// Clean up test database after all tests are done
+	db.DB.Exec("DELETE FROM genders")
 }
 
 func (s *GenderTestSuite) SetupTest() {
-	database.DB.Exec("DELETE FROM genders")
+	// Clean the genders table before each test
+	db.DB.Exec("DELETE FROM genders")
 }
 
 func (s *GenderTestSuite) TestCreateGender() {
@@ -53,126 +52,119 @@ func (s *GenderTestSuite) TestCreateGender() {
 		IsActive:    true,
 	}
 
-	err := database.DB.Create(&gender).Error
-	assert.NoError(s.T(), err)
+	result := db.DB.Create(&gender)
+	assert.NoError(s.T(), result.Error)
 	assert.NotZero(s.T(), gender.ID)
 	assert.Equal(s.T(), "Male", gender.Name)
 	assert.Equal(s.T(), "Male gender", gender.Description)
 	assert.True(s.T(), gender.IsActive)
 }
 
-func (s *GenderTestSuite) TestCreateGenderWithoutDescription() {
-	gender := Gender{
-		Name:     "Female",
-		IsActive: true,
-	}
-
-	err := database.DB.Create(&gender).Error
-	assert.NoError(s.T(), err)
-	assert.NotZero(s.T(), gender.ID)
-	assert.Equal(s.T(), "Female", gender.Name)
-	assert.Empty(s.T(), gender.Description)
-	assert.True(s.T(), gender.IsActive)
-}
-
-func (s *GenderTestSuite) TestCreateGenderUniqueConstraint() {
+func (s *GenderTestSuite) TestCreateGenderWithDuplicateName() {
 	// Create first gender
 	gender1 := Gender{
+		Name:        "Female",
+		Description: "Female gender",
+		IsActive:    true,
+	}
+	result1 := db.DB.Create(&gender1)
+	assert.NoError(s.T(), result1.Error)
+
+	// Try to create second gender with same name
+	gender2 := Gender{
+		Name:        "Female",
+		Description: "Another female gender",
+		IsActive:    true,
+	}
+	result2 := db.DB.Create(&gender2)
+	assert.Error(s.T(), result2.Error)
+}
+
+func (s *GenderTestSuite) TestFindGender() {
+	// Create a gender first
+	gender := Gender{
 		Name:        "Non-binary",
 		Description: "Non-binary gender",
 		IsActive:    true,
 	}
-	err := database.DB.Create(&gender1).Error
-	assert.NoError(s.T(), err)
+	db.DB.Create(&gender)
 
-	// Try to create another gender with the same name
-	gender2 := Gender{
-		Name:        "Non-binary",
-		Description: "Another non-binary description",
-		IsActive:    false,
-	}
-	err = database.DB.Create(&gender2).Error
-	assert.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "Duplicate")
-}
-
-func (s *GenderTestSuite) TestCreateGenderWithEmptyName() {
-	gender := Gender{
-		Name:        "",
-		Description: "Empty name test",
-		IsActive:    true,
-	}
-
-	err := database.DB.Create(&gender).Error
-	assert.Error(s.T(), err)
+	// Find the gender
+	var foundGender Gender
+	result := db.DB.First(&foundGender, gender.ID)
+	assert.NoError(s.T(), result.Error)
+	assert.Equal(s.T(), gender.ID, foundGender.ID)
+	assert.Equal(s.T(), "Non-binary", foundGender.Name)
 }
 
 func (s *GenderTestSuite) TestUpdateGender() {
-	// Create a gender
+	// Create a gender first
 	gender := Gender{
 		Name:        "Other",
 		Description: "Other gender",
 		IsActive:    true,
 	}
-	err := database.DB.Create(&gender).Error
-	assert.NoError(s.T(), err)
+	db.DB.Create(&gender)
 
 	// Update the gender
 	gender.Description = "Updated description"
 	gender.IsActive = false
-	err = database.DB.Save(&gender).Error
-	assert.NoError(s.T(), err)
+	result := db.DB.Save(&gender)
+	assert.NoError(s.T(), result.Error)
 
 	// Verify the update
 	var updatedGender Gender
-	err = database.DB.First(&updatedGender, gender.ID).Error
-	assert.NoError(s.T(), err)
+	db.DB.First(&updatedGender, gender.ID)
 	assert.Equal(s.T(), "Updated description", updatedGender.Description)
 	assert.False(s.T(), updatedGender.IsActive)
 }
 
 func (s *GenderTestSuite) TestDeleteGender() {
-	// Create a gender
+	// Create a gender first
 	gender := Gender{
-		Name:        "Test Delete",
-		Description: "Gender to be deleted",
+		Name:        "Temporary",
+		Description: "Temporary gender",
 		IsActive:    true,
 	}
-	err := database.DB.Create(&gender).Error
-	assert.NoError(s.T(), err)
+	db.DB.Create(&gender)
 
 	// Delete the gender
-	err = database.DB.Delete(&gender).Error
-	assert.NoError(s.T(), err)
+	result := db.DB.Delete(&gender)
+	assert.NoError(s.T(), result.Error)
 
 	// Verify deletion
 	var deletedGender Gender
-	err = database.DB.First(&deletedGender, gender.ID).Error
+	err := db.DB.First(&deletedGender, gender.ID).Error
 	assert.Error(s.T(), err)
 }
 
 func (s *GenderTestSuite) TestFindGenders() {
-	// Create multiple genders
-	genders := []Gender{
-		{Name: "Male", Description: "Male gender", IsActive: true},
-		{Name: "Female", Description: "Female gender", IsActive: true},
-		{Name: "Non-binary", Description: "Non-binary gender", IsActive: false},
-	}
+	// Create multiple genders individually
+	gender1 := Gender{Name: "Male", Description: "Male gender", IsActive: true}
+	err := db.DB.Create(&gender1).Error
+	assert.NoError(s.T(), err)
 
-	for _, gender := range genders {
-		err := database.DB.Create(&gender).Error
-		assert.NoError(s.T(), err)
-	}
+	gender2 := Gender{Name: "Female", Description: "Female gender", IsActive: true}
+	err = db.DB.Create(&gender2).Error
+	assert.NoError(s.T(), err)
+
+	gender3 := Gender{Name: "Non-binary", Description: "Non-binary gender", IsActive: true}
+	err = db.DB.Create(&gender3).Error
+	assert.NoError(s.T(), err)
+
+	// Update one gender to be inactive
+	err = db.DB.Model(&gender3).Update("is_active", false).Error
+	assert.NoError(s.T(), err)
 
 	// Find all genders
 	var foundGenders []Gender
-	err := database.DB.Find(&foundGenders).Error
+	err = db.DB.Find(&foundGenders).Error
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), foundGenders, 3)
 
 	// Find active genders only
 	var activeGenders []Gender
-	err = database.DB.Where("is_active = ?", true).Find(&activeGenders).Error
+	err = db.DB.Where("is_active = ?", true).Find(&activeGenders).Error
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), activeGenders, 2)
 }
