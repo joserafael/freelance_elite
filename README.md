@@ -28,7 +28,7 @@ A comprehensive RESTful API built with Go for managing freelance profiles, user 
 
 ## 🛠 Technologies Used
 
-- **Go 1.25** - Primary programming language
+- **Go 1.23** - Primary programming language
 - **Echo v4** - High-performance web framework
 - **GORM** - ORM for database interactions
 - **MySQL** - Primary database
@@ -39,7 +39,7 @@ A comprehensive RESTful API built with Go for managing freelance profiles, user 
 
 ## 📋 Prerequisites
 
-- Go 1.25 or higher
+- Go 1.23 or higher
 - MySQL 8.0 or higher
 - Git
 
@@ -399,7 +399,7 @@ JWT_SECRET=your_super_secure_production_jwt_secret
 
 ### Docker Support (Optional)
 ```dockerfile
-FROM golang:1.25-alpine AS builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
 COPY . .
 RUN go build -o freelance_elite
