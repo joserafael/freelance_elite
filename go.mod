@@ -1,6 +1,6 @@
 module freelance_elite
 
-go 1.23
+go 1.24.0
 
 // github.com/joserafael/freelance_elite
 

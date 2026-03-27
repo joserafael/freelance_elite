@@ -8,12 +8,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/joho/godotenv"
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
-	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/crypto/bcrypt"
-	"github.com/joho/godotenv"
 
 	"freelance_elite/db"
 	"freelance_elite/models"
@@ -27,20 +27,20 @@ type AuthTestSuite struct {
 func (s *AuthTestSuite) SetupSuite() {
 	// Setup test database configuration
 	os.Setenv("APP_ENV", "test")
-	
+
 	// Load environment variables from .env file
 	loadErr := godotenv.Load("../.env")
 	if loadErr != nil {
 		s.T().Fatal("Error loading .env file", loadErr)
 	}
-	
+
 	// Initialize test database
 	dbUser := os.Getenv("TEST_DB_USER")
 	dbPassword := os.Getenv("TEST_DB_PASSWORD")
 	dbName := os.Getenv("TEST_DB_NAME")
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
-	
+
 	db.InitDB(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	s.e = echo.New()
@@ -211,6 +211,52 @@ func (s *AuthTestSuite) TestLogoutSuccess() {
 	assert.Contains(s.T(), rec.Body.String(), "Token has been revoked")
 }
 
+func (s *AuthTestSuite) TestProfileSuccess() {
+	user := models.User{
+		Username:             "profileuser",
+		Email:                "profile@example.com",
+		Password:             "password123",
+		PasswordConfirmation: "password123",
+	}
+	jsonUser, _ := json.Marshal(user)
+
+	req := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(jsonUser))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	s.e.ServeHTTP(rec, req)
+	assert.Equal(s.T(), http.StatusCreated, rec.Code)
+
+	loginPayload := models.User{
+		Email:    "profile@example.com",
+		Password: "password123",
+	}
+	jsonLogin, _ := json.Marshal(loginPayload)
+
+	req = httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonLogin))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec = httptest.NewRecorder()
+	s.e.ServeHTTP(rec, req)
+	assert.Equal(s.T(), http.StatusOK, rec.Code)
+
+	var loginResponse map[string]string
+	json.Unmarshal(rec.Body.Bytes(), &loginResponse)
+	token := loginResponse["token"]
+	assert.NotEmpty(s.T(), token)
+
+	req = httptest.NewRequest(http.MethodGet, "/profile", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec = httptest.NewRecorder()
+	s.e.ServeHTTP(rec, req)
+	assert.Equal(s.T(), http.StatusOK, rec.Code)
+	assert.Contains(s.T(), rec.Body.String(), "profile@example.com")
+}
+
+func (s *AuthTestSuite) TestProfileUnauthorized() {
+	req := httptest.NewRequest(http.MethodGet, "/profile", nil)
+	rec := httptest.NewRecorder()
+	s.e.ServeHTTP(rec, req)
+	assert.Equal(s.T(), http.StatusUnauthorized, rec.Code)
+}
 
 func TestAuthTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthTestSuite))
