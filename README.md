@@ -2,7 +2,7 @@
 
 A comprehensive RESTful API built with Go for managing freelance profiles, user authentication, and related data. This project provides a robust backend solution for freelance platforms with user management, profile creation, and geographic data handling.
 
-## 🚀 Features
+## Features
 
 ### Authentication & Security
 - **User Registration** with validation and password confirmation
@@ -26,7 +26,7 @@ A comprehensive RESTful API built with Go for managing freelance profiles, user 
 - **Gender Categories** with active/inactive status
 - **CRUD Operations** for gender management
 
-## 🛠 Technologies Used
+## Technologies Used
 
 - **Go 1.23** - Primary programming language
 - **Echo v4** - High-performance web framework
@@ -37,13 +37,13 @@ A comprehensive RESTful API built with Go for managing freelance profiles, user 
 - **godotenv** - Environment variable management
 - **testify** - Testing framework
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Go 1.23 or higher
 - MySQL 8.0 or higher
 - Git
 
-## ⚙️ Setup & Installation
+## Setup & Installation
 
 ### 1. Clone the Repository
 ```bash
@@ -100,7 +100,7 @@ go run cmd/seed/*.go
 go mod download
 ```
 
-## 🚀 Running the Application
+## Running the Application
 
 ### Development Server
 ```bash
@@ -118,7 +118,7 @@ go build
 go run .
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Run All Tests
 ```bash
@@ -136,7 +136,7 @@ go test -v ./models
 go test -cover ./...
 ```
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication Endpoints
 
@@ -314,7 +314,7 @@ Content-Type: application/json
 DELETE /countries/:id
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 freelance_elite/
@@ -343,7 +343,7 @@ freelance_elite/
 └── README.md            # Project documentation
 ```
 
-## 🔧 Development Commands
+## Development Commands
 
 ### Database Operations
 ```bash
@@ -375,7 +375,7 @@ go build
 GOOS=linux GOARCH=amd64 go build
 ```
 
-## 🔒 Security Features
+## Security Features
 
 - **JWT Token Authentication** with configurable expiration
 - **Token Blacklisting** for secure logout
@@ -384,7 +384,7 @@ GOOS=linux GOARCH=amd64 go build
 - **SQL Injection Protection** via GORM
 - **Environment-based Configuration** for sensitive data
 
-## 🚀 Deployment
+## Deployment
 
 ### Environment Variables for Production
 ```env
@@ -411,7 +411,7 @@ COPY --from=builder /app/freelance_elite .
 CMD ["./freelance_elite"]
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -419,11 +419,11 @@ CMD ["./freelance_elite"]
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 📞 Support
+## Support
 
 If you encounter any issues or have questions:
 
@@ -431,7 +431,7 @@ If you encounter any issues or have questions:
 2. Create a new issue with detailed information
 3. Contact the development team
 
-## 🔄 Changelog
+## Changelog
 
 ### Version 1.0.0
 - Initial release with authentication system
